@@ -1,7 +1,16 @@
 package com.larissa.springSecurity_with_jwt.entity;
 
 public enum UserRole {
+    ADMIN("admin"),
+    USER("user");
 
-    ROLE_CUSTOMER,
-    ROLE_ADMINISTRATOR
+    private String role;
+
+    UserRole(String role){
+        this.role = role;
+    }
+
+    public String getRole(){
+        return role;
+    }
 }

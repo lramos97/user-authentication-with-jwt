@@ -1,9 +1,6 @@
 package com.larissa.springSecurity_with_jwt.security.authentication;
 
-import com.larissa.springSecurity_with_jwt.entity.User;
 import com.larissa.springSecurity_with_jwt.repository.UserRepository;
-import com.larissa.springSecurity_with_jwt.security.config.SecurityConfiguration;
-import com.larissa.springSecurity_with_jwt.security.userDetails.UserDetailsImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,11 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 @Component
 public class UserAuthenticationFilter extends OncePerRequestFilter {
@@ -30,30 +27,20 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        if(checkIfEndpointIsNotPublic(request)) {
-            String token = recoveryToken(request);
+        String token = recoverToken(request);
             if(token != null) {
-                String subject = jwtTokenService.getSubjectFromToken(token);
-                User user = userRepository.findByEmail(subject).get();
-                UserDetailsImpl userDetails = new UserDetailsImpl(user);
+                String login = jwtTokenService.validateToken(token);
+                UserDetails user = userRepository.findByLogin(login);
 
-                Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails.getUsername(), null, userDetails.getAuthorities());
+                Authentication authentication = new UsernamePasswordAuthenticationToken(user.getUsername(), null, user.getAuthorities());
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-            } else {
-                throw new RuntimeException("The token is missing.");
             }
-        }
+
         filterChain.doFilter(request, response);
     }
 
-    private boolean checkIfEndpointIsNotPublic(HttpServletRequest request) {
-
-        String requestURI = request.getRequestURI();
-        return !Arrays.asList(SecurityConfiguration.ENDPOINTS_WITH_AUTHENTICATION_NOT_REQUIRED).contains(requestURI);
-    }
-
-    private String recoveryToken(HttpServletRequest request) {
+    private String recoverToken(HttpServletRequest request) {
 
         String authorizationHeader = request.getHeader("Authorization");
         if(authorizationHeader != null) {

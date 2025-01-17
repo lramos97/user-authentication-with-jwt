@@ -2,7 +2,5 @@ package com.larissa.springSecurity_with_jwt.dto;
 
 import com.larissa.springSecurity_with_jwt.entity.UserRole;
 
-import java.util.List;
-
-public record RecoveryUserDto(Long id, String email, List<UserRole> roles) {
+public record RegisterUserDTO(String login, String password, UserRole role){
 }
